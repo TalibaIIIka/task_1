@@ -1,0 +1,46 @@
+version: '3'
+services:
+  transfer:
+    build:
+      context: .
+      dockerfile: Dockerfile_recipients
+    network_mode: host
+    environment:
+      - ACTIVEMQ_HOST=127.0.0.1
+      - ACTIVEMQ_PORT=61613
+      - ACTIVEMQ_USER=admin
+      - ACTIVEMQ_PASSWORD=admin
+      - LOG_LEVEL=DEBUG
+      - SOURCE_QUEUE=/queue/source
+      - DESTINATION_QUEUES=/queue/consumer_1;/queue/consumer_2
+  translator:
+    build:
+      context: .
+      dockerfile: Dockerfile_translator
+    network_mode: host
+    environment:
+      - ACTIVEMQ_HOST=127.0.0.2
+      - ACTIVEMQ_PORT=61613
+      - ACTIVEMQ_USER=admin
+      - ACTIVEMQ_PASSWORD=admin
+      - LOG_LEVEL=DEBUG
+      - SOURCE_QUEUE=/queue/encode
+      - DESTINATION_QUEUES=/queue/decode
+  activemq:
+    image: ivonet/activemq
+    ports:
+      - "8161:8161"
+      - "61616:61616"
+      - "61613:61613"
+    environment:
+      - ACTIVEMQ_MIN_MEMORY=512
+      - ACTIVEMQ_MAX_MEMORY=1024
+      - ACTIVEMQ_ENABLED_AUTH=false
+      - ACTIVEMQ_ADMIN_LOGIN=admin
+      - ACTIVEMQ_ADMIN_PASSWORD=admin
+      - ACTIVEMQ_STATIC_QUEUES=source;consumer_1;consumer_2;encode;decode
+    volumes:
+      - log_data:/var/log/activemq
+
+volumes:
+  log_data:
